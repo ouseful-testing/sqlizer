@@ -1,0 +1,58 @@
+name: Issue Powered Data Grabber
+on:
+  issues:
+    types: [opened, reopened]
+jobs:
+  snoop:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Show context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
+
+  issue-datagrab-csv:
+    if: startsWith(github.event.issue.title, 'fetchcsv') && github.event.issue.user.login==github.actor  && (github.event.issue.author_association=='CONTRIBUTOR' || github.event.issue.author_association=='COLLABORATOR' || github.event.issue.author_association=='MEMBER' || github.event.issue.author_association=='OWNER')
+
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Where are we
+      run: echo "$(pwd)"
+    - name: Install dependencies
+      run: python -m pip install --upgrade sqlite-utils
+      
+    - name: Copy Repository Contents
+      uses: actions/checkout@v2
+
+
+    - name: parse issue
+      run: |
+        issue_head="${{github.event.issue.title}}"
+        echo ::set-env name=table::"$(cut -d' ' -f2 <<<"$issue_head")"
+        issue_body="${{github.event.issue.body}}"
+        echo "Issue: $issue"
+        echo ::set-env name=url::"$(head -n1 <<<"$issue_body")"
+        echo ::set-env name=issue::$issue
+
+    - name: grab csv into sqlite db
+      run: |
+        echo "Grabbing $url into $table"
+        curl -L "$url" | sqlite-utils insert data.db "$table" - --csv
+ 
+    - name: git add and push
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data.db
+        git commit -m"Grabbing $url into $table" -a || true
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    

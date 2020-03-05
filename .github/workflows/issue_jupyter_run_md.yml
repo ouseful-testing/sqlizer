@@ -1,0 +1,65 @@
+name: Issue Powered Jupyter md runner
+on:
+  issues:
+    types: [opened, reopened]
+jobs:
+  issue-jupytext-md:
+    if: startsWith(github.event.issue.title, 'jupytext_run_md') && github.event.issue.user.login==github.actor  && (github.event.issue.author_association=='CONTRIBUTOR' || github.event.issue.author_association=='COLLABORATOR' || github.event.issue.author_association=='MEMBER' || github.event.issue.author_association=='OWNER')
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        activate-conda: false
+        conda-channels: conda-forge
+    - name: Install conda dependencies
+      run: |
+        conda install -y pandoc
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Install pip dependencies
+      run: (test -f requirements.txt && python -m pip install -r requirements.txt) || echo "No other requirements." 
+
+    - name: parse issue
+      run: |
+        issue_head="${{github.event.issue.title}}"
+        fn="$(cut -d' ' -f2 <<<"$issue_head")"
+        echo ::set-env name=fn::$fn
+        cat << "EOF" > $fn.md
+        ${{github.event.issue.body}}
+        EOF
+
+    - name: convert md to ipynb
+      run: jupytext --to notebook --execute $fn.md  
+ 
+    - name: convert to html
+      run: jupyter nbconvert --to html $fn.ipynb
+    - name: git add and push
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        mkdir -p md
+        mkdir -p ipynb
+        mkdir -p html
+        mv  $fn.md md/
+        mv  $fn.html html/
+        mv  $fn.ipynb ipynb/
+        git add md/$fn.md
+        git add html/$fn.html
+        git add ipynb/$fn.ipynb
+        git commit -m"Commiting $fn" -a || true
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
