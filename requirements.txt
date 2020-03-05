@@ -1,5 +1,7 @@
 jupyter
 
+sqlite-utils
+
 nbconvert
 jupytext
 pandas
