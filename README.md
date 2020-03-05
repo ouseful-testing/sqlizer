@@ -1,4 +1,4 @@
-# sqlize
+# sqlizer
 
 Can we grab data into a repo and view it using a browser based SQL browser?
 
