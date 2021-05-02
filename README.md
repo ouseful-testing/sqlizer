@@ -10,7 +10,7 @@ This repo provides a proof of concept recipe for:
 - exploring the database via an interactive SQL query tool published using Github Pages.
 
 
-[See also: https://phiresky.github.io/blog/2021/hosting-sqlite-databases-on-github-pages/ for efficient ways to query Gihtaub Pages hosted SQLite.]
+[See also: https://phiresky.github.io/blog/2021/hosting-sqlite-databases-on-github-pages/ for efficient ways to query Gihtub Pages hosted SQLite.]
 
 ## Set-up
 
