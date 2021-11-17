@@ -4,6 +4,8 @@ Can we grab data into a repo and view it using a browser based SQL browser?
 
 *Yes we can.*
 
+[View demo here - https://ouseful-testing.github.io/sqlizer/](https://ouseful-testing.github.io/sqlizer/)
+
 This repo provides a proof of concept recipe for:
 
 - loading data into a SQLite database stored within the repository;
